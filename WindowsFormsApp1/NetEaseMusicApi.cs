@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Net;
 using System.Numerics;
+using System.Net.Http;
 
 namespace 网易云歌词提取
 {
@@ -41,7 +42,7 @@ namespace 网易云歌词提取
         public Dictionary<long, Datum> GetDatum(long[] songId, long bitrate = 999000)
         {
             var result = new Dictionary<long, Datum>();
-            
+
             var urls = GetSongsUrl(songId, bitrate);
             if (urls.Code == 200)
             {
@@ -62,39 +63,39 @@ namespace 网易云歌词提取
             {
                 return result;
             }
-            
+
             var detailResult = GetDetail(songIds);
             if (detailResult == null || detailResult.Code != 200)
             {
                 return result;
             }
-            
+
             foreach (var song in detailResult.Songs)
             {
                 result[song.Id] = song;
             }
-           
+
             return result;
         }
 
         public AlbumResult GetAlbum(long albumId)
         {
             var url = "https://music.163.com/weapi/v1/album/" + albumId + "?csrf_token=";
-            
+
             var data = new Dictionary<string, string>
             {
                 { "csrf_token", "" },
             };
 
             var raw = CURL(url, Prepare(JsonConvert.SerializeObject(data)));
-            
+
             return JsonConvert.DeserializeObject<AlbumResult>(raw);
         }
 
         public LyricResult GetLyric(long songId)
         {
             const string url = "https://music.163.com/weapi/song/lyric?csrf_token=";
-            
+
             var data = new Dictionary<string, string>
             {
                 { "id", songId.ToString() },
@@ -106,10 +107,10 @@ namespace 网易云歌词提取
             };
 
             var raw = CURL(url, Prepare(JsonConvert.SerializeObject(data)));
-            
+
             return JsonConvert.DeserializeObject<LyricResult>(raw);
         }
-        
+
         private SongUrls GetSongsUrl(long[] songId, long bitrate = 999000)
         {
             const string url = "https://music.163.com/weapi/song/enhance/player/url?csrf_token=";
@@ -137,7 +138,7 @@ namespace 网易云歌词提取
             {
                 songRequests.Append("{'id':'").Append(songId).Append("'}").Append(",");
             }
-            
+
             var data = new Dictionary<string, string>
             {
                 {
@@ -146,7 +147,7 @@ namespace 网易云歌词提取
                 },
                 { "csrf_token", "" },
             };
-            
+
             var raw = CURL(url, Prepare(JsonConvert.SerializeObject(data)));
 
             return JsonConvert.DeserializeObject<DetailResult>(raw);
@@ -164,7 +165,7 @@ namespace 网易云歌词提取
             var str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var sb = new StringBuilder(length);
             var rnd = new Random();
-            
+
             for (var i = 0; i < length; ++i)
             {
                 sb.Append(str[rnd.Next(0, str.Length)]);
@@ -203,20 +204,22 @@ namespace 网易云歌词提取
         private string CURL(string url, Dictionary<string, string> parms, string method = "POST")
         {
             string result;
-            using (var wc = new WebClient())
+            using (var client = new HttpClient())
             {
-                wc.Headers.Add(HttpRequestHeader.ContentType, "application/x-www-form-urlencoded");
-                wc.Headers.Add(HttpRequestHeader.Referer, _REFERER);
-                wc.Headers.Add(HttpRequestHeader.UserAgent, _USERAGENT);
-                wc.Headers.Add(HttpRequestHeader.Cookie, _COOKIE);
-                var reqparm = new System.Collections.Specialized.NameValueCollection();
+                //client.DefaultRequestHeaders.Add("Content-Type", "application /x-www-form-urlencoded");
+                client.DefaultRequestHeaders.Add("Referer", _REFERER);
+                client.DefaultRequestHeaders.Add("User-Agent", _USERAGENT);
+                client.DefaultRequestHeaders.Add("Cookie", _COOKIE);
+                var reqparm = new Dictionary<string, string>();
                 foreach (var keyPair in parms)
                 {
                     reqparm.Add(keyPair.Key, keyPair.Value);
                 }
-
-                var bytes = wc.UploadValues(url, method, reqparm);
-                result = Encoding.UTF8.GetString(bytes);
+                using var postContent = new FormUrlEncodedContent(reqparm);
+                using var response = client.PostAsync(url, postContent).Result;
+                response.EnsureSuccessStatusCode();
+                using HttpContent content = response.Content;
+                result = content.ReadAsStringAsync().Result;
             }
 
             return result;
@@ -226,7 +229,7 @@ namespace 网易云歌词提取
         {
             var dec = new BigInteger(0);
             var len = hex.Length;
-            
+
             for (var i = 0; i < len; i++)
             {
                 dec += BigInteger.Multiply(new BigInteger(Convert.ToInt32(hex[i].ToString(), 16)),

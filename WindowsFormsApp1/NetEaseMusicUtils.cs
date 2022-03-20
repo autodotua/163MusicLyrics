@@ -200,17 +200,13 @@ namespace 网易云歌词提取
          */
         public static string GetOutputName(SongVo songVo, SearchInfo searchInfo)
         {
-            switch (searchInfo.OutputFileNameType)
+            return (searchInfo.OutputFileNameType switch
             {
-                case OUTPUT_FILENAME_TYPE_ENUM.NAME_SINGER:
-                    return songVo.Name + " - " + songVo.Singer;
-                case OUTPUT_FILENAME_TYPE_ENUM.SINGER_NAME:
-                    return songVo.Singer + " - " + songVo.Name;
-                case OUTPUT_FILENAME_TYPE_ENUM.NAME:
-                    return songVo.Name;
-                default:
-                    return "";
-            }
+                OUTPUT_FILENAME_TYPE_ENUM.NAME_SINGER => songVo.Name + " - " + songVo.Singer,
+                OUTPUT_FILENAME_TYPE_ENUM.SINGER_NAME => songVo.Singer + " - " + songVo.Name,
+                OUTPUT_FILENAME_TYPE_ENUM.NAME => songVo.Name,
+                _ => "",
+            }).Trim();
         }
 
         /*

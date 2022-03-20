@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -355,7 +356,7 @@ namespace 网易云歌词提取
         /**
          * 单个保存
          */
-        private void SingleSave(long songId)
+        private async void SingleSave(long songId)
         {
             var saveDialog = new SaveFileDialog();
             try
@@ -385,7 +386,7 @@ namespace 网易云歌词提取
                     sw.Write(NetEaseMusicUtils.GetOutputContent(saveVo.LyricVo, _globalSearchInfo));
                     sw.Flush();
                     sw.Close();
-                    MessageBox.Show(ErrorMsg.SAVE_SUCCESS, "提示");
+                    await AfterSaved();
                 }
             }
             catch (Exception ew)
@@ -397,7 +398,7 @@ namespace 网易云歌词提取
         /**
          * 批量保存
          */
-        private void BatchSave()
+        private async void BatchSave()
         {
             var saveDialog = new SaveFileDialog();
             try
@@ -422,8 +423,7 @@ namespace 网易云歌词提取
                         sw.Flush();
                         sw.Close();
                     }
-
-                    MessageBox.Show(ErrorMsg.SAVE_SUCCESS, "提示");
+                    await AfterSaved();
                 }
             }
             catch (Exception ew)
@@ -441,6 +441,15 @@ namespace 网易云歌词提取
             }
 
             UpdateLrcTextBox(log.ToString());
+        }
+
+        private async Task AfterSaved()
+        {
+            saveBtn.Enabled = false;
+            saveBtn.Text = "保存成功";
+            await Task.Delay(1000);
+            saveBtn.Enabled = true;
+            saveBtn.Text = "保存";
         }
 
         /**
