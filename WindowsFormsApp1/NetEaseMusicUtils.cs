@@ -15,14 +15,29 @@ namespace 网易云歌词提取
         {
             long result = 0;
 
-            if (string.IsNullOrEmpty(input) || !CheckNum(input))
+            if (string.IsNullOrEmpty(input) )
             {
                 errorMsg = ErrorMsg.INPUT_ID_ILLEGAG;
             }
             else
             {
                 errorMsg = ErrorMsg.SUCCESS;
-                result = long.Parse(input);
+                if(!long.TryParse(input,out result))
+                {
+                    Regex r = new Regex(@"id=(\w+)");
+                    if(r.IsMatch(input))
+                    {
+                        string strID=r.Match(input).Groups[1].Value;
+                        if(!long.TryParse(strID, out result))
+                        {
+                            errorMsg = ErrorMsg.INPUT_ID_ILLEGAG;
+                        }
+                    }
+                    else
+                    {
+                        errorMsg = ErrorMsg.INPUT_ID_ILLEGAG;
+                    }
+                }
             }
 
             return result;

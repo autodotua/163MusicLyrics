@@ -42,8 +42,8 @@ namespace 网易云歌词提取
         {
             InitializeComponent();
 
-            comboBox_output_name.SelectedIndex = 0;
-            comboBox_output_encode.SelectedIndex = 0;
+            comboBox_output_name.SelectedIndex = 1;
+            comboBox_output_encode.SelectedIndex = 1;
             comboBox_diglossia_lrc.SelectedIndex = 0;
             comboBox_search_type.SelectedIndex = 0;
             comboBox_dot.SelectedIndex = 0;
